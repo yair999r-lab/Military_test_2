@@ -21,7 +21,7 @@ export async function controler(collection1, collection2) {
       }
       return existsMap;
     } catch (error) {
-      next(error);
+      throw error;
     }
   }
 
@@ -36,7 +36,13 @@ export async function controler(collection1, collection2) {
     await mongoRepo.addData(collection1, initGame)
     return initGame
   }
-  return { loadMapToDataBase, createNewGame };
+
+  async function getSaveGame(gameId) {
+    const exsistGame = await mongoRepo.findData(collection1, {id: Number(gameId)})
+    service.checkIfGameExists(exsistGame)
+    return exsistGame
+  }
+  return { loadMapToDataBase, createNewGame, getSaveGame };
 }
 
 export const myControler = await controler(collection1, collection2);
