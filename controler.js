@@ -45,16 +45,37 @@ export async function controler(collection1, collection2) {
 
   async function reinforcePlayer( gameId ,territoryId) {
     const game = await getSaveGame(gameId)
-    service.checkAcativti(game)
-    service.checkTerritory(game, territoryId)
+    service.checkAcativti(game, "reinforce")
+    service.checkTerritory(game, territoryId, "player")
     const selectdTerr = game.territories.find((ter) => Number(ter.id) === Number(territoryId))
     selectdTerr.soldiers += 3
     game.phase = "attack"
     await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, game)
-    return game
-
+    const playerEvent = {type: "reinforce", territoryId : territoryId, soldiersAdded: 3}
+    return {game: game, playerEvent, computerEvents : [] }
   }
-  return { loadMapToDataBase, createNewGame, getSaveGame, reinforcePlayer };
+
+  async function attackStage(fromId, toId, soldiers, skip, gameId) {
+    const game = await getSaveGame(gameId)
+    service.checkAcativti(game, "attack")
+    if(skip){
+        game.phase = "move"
+        await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, game)
+        return {game: game, playerEvent: null, computerEvents: []}
+    }
+    service.checkTerritory(game, fromId, "player")
+    service.checkTerritory(game, toId, "computer")
+    service.checkNeighoders(game ,fromId, toId)
+    service.checkSendSoldiersAmount(game, fromId, soldiers)
+    const battleResult = service.battle(game, fromId, toId ,soldiers)
+    const winner = battleResult.winner
+    delete battleResult.winner
+
+    await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, battleResult)
+    
+    return {game: battleResult, playerEvent: {type: "attack", fromId, toId, soldiers, winner}, computerEvents: []}
+  }
+  return { loadMapToDataBase, createNewGame, getSaveGame, reinforcePlayer, attackStage };
 }
 
 export const myControler = await controler(collection1, collection2);
