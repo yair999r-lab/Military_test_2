@@ -11,3 +11,14 @@ export function validPlayerName(req, res, next){
     }
 }
 
+export function validTerritory(req, res, next){
+    const terr = req.params.id
+    if(!terr || !terr.trim()){
+        const error = new Error("Bad Request")
+        error.status = 400
+        next(error)
+    }
+    else{
+        next()
+    }
+}

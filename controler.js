@@ -42,7 +42,19 @@ export async function controler(collection1, collection2) {
     service.checkIfGameExists(exsistGame)
     return exsistGame
   }
-  return { loadMapToDataBase, createNewGame, getSaveGame };
+
+  async function reinforcePlayer( gameId ,territoryId) {
+    const game = await getSaveGame(gameId)
+    service.checkAcativti(game)
+    service.checkTerritory(game, territoryId)
+    const selectdTerr = game.territories.find((ter) => Number(ter.id) === Number(territoryId))
+    selectdTerr.soldiers += 3
+    game.phase = "attack"
+    await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, game)
+    return game
+
+  }
+  return { loadMapToDataBase, createNewGame, getSaveGame, reinforcePlayer };
 }
 
 export const myControler = await controler(collection1, collection2);

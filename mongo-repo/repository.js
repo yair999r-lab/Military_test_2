@@ -17,5 +17,12 @@ export function myRepo() {
     return result.insertId
   }
 
-  return { addNewMap, findData, findAllgames, addData };
+  async function updateGame(collection, filter, data) {
+    console.log(filter)
+    const result = await collection.replaceOne(filter, data)
+    console.log(result)
+    return result
+  }
+
+  return { addNewMap, findData, findAllgames, addData, updateGame };
 }

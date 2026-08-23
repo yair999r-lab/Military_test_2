@@ -26,7 +26,28 @@ export function myService(){
                 throw error
             }
         }
+
+        function checkAcativti(game){
+            console.log(typeof game.phase, typeof game.status)
+            if(game.status === "playing" && game.phase === "reinforce"){
+                return;
+            }
+            else{
+                const error = new Error("game must be active end in phase reinforce!!!")
+                error.status = 404
+                throw error
+            }
+        }
+
+        function checkTerritory(game, territoryId){
+            const selectdTerr = game.territories.find((ter) => Number(ter.id) === Number(territoryId))
+            if(!selectdTerr || selectdTerr.owner === "computer"){
+                const error = new Error("The territory must belong to the player!!!")
+                error.status = 404
+                throw error
+            }
+        }
     
-    return {addInitSoldiersToMap, createNewInitGsmeObj, checkIfGameExists}
+    return {addInitSoldiersToMap, createNewInitGsmeObj, checkIfGameExists, checkAcativti, checkTerritory}
 }
 
