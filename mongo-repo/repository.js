@@ -18,9 +18,12 @@ export function myRepo() {
   }
 
   async function updateGame(collection, filter, data) {
-    console.log(filter)
-    const result = await collection.replaceOne(filter, data)
-    console.log(result)
+    delete data.playerEvent
+    delete data.computerStatus
+    const game = data.game || data
+    
+    const result = await collection.replaceOne(filter, game)
+    
     return result
   }
 

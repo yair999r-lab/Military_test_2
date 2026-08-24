@@ -31,7 +31,7 @@ export async function controler(collection1, collection2) {
     initGame.territories = service.addInitSoldiersToMap(initMap.map)
 
     const allExistsGames = await mongoRepo.findAllgames(collection1)
-    initGame.id = allExistsGames.length + 1
+    initGame.id = allExistsGames.length 
 
     await mongoRepo.addData(collection1, initGame)
     return initGame
@@ -45,6 +45,7 @@ export async function controler(collection1, collection2) {
 
   async function reinforcePlayer( gameId ,territoryId) {
     const game = await getSaveGame(gameId)
+
     service.checkAcativti(game, "reinforce")
     service.checkTerritory(game, territoryId, "player")
     const selectdTerr = game.territories.find((ter) => Number(ter.id) === Number(territoryId))
@@ -57,12 +58,21 @@ export async function controler(collection1, collection2) {
 
   async function attackStage(fromId, toId, soldiers, skip, gameId) {
     const game = await getSaveGame(gameId)
-    console.log(game)
     service.checkAcativti(game, "attack")
-    if(skip){
+    
+      console.log("2434343434343434343434343434343434343")
+    if(skip === true){
         game.phase = "move"
-        await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, game)
-        return {game: game, playerEvent: null, computerEvents: []}
+        const playerEvent = null
+        const qgame = await computerTurn(game, playerEvent)
+
+        const ce = qgame.computerEvents
+        delete qgame.computerEvents
+
+        const pe = qgame.computerEvents
+        delete qgame.computerEvents
+        await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, {...qgame})
+         return {...qgame, playerEvent: pe, computerEvents: ce}
     }
     service.checkTerritory(game, fromId, "player")
     service.checkTerritory(game, toId, "computer")
@@ -72,11 +82,65 @@ export async function controler(collection1, collection2) {
     const winner = battleResult.winnerAttack
     delete battleResult.winnerAttack
 
-    await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, battleResult)
+    const ce = battleResult.computerEvents
+    delete battleResult.computerEvents
+    
+
+    await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, {...battleResult})
     
     return {game: battleResult, playerEvent: {type: "attack", fromId, toId, soldiers, winner}, computerEvents: []}
   }
-  return { loadMapToDataBase, createNewGame, getSaveGame, reinforcePlayer, attackStage };
+
+  async function moveSoldiers(gameId,fromId, toId, soldiers) {
+    const game = await getSaveGame(gameId)
+    console.log("movesoldiers")
+    service.checkAcativti(game, "move")
+    service.checkNeighoders(game, fromId, toId)
+    service.checkSendSoldiersAmount(game, fromId, soldiers)
+    service.checkTerritory(game, fromId, "player")
+    service.checkTerritory(game, toId, "player")
+    const gameMove = service.move(game, fromId, toId, soldiers)
+    const playerEvent = {type: "move", fromId, toId, soldiers}
+    const gameAfterComuter = await computerTurn(gameMove, playerEvent)
+
+    await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, gameAfterComuter)
+    
+    return gameAfterComuter
+  }
+
+  async function computerTurn(game, playerEvent) {
+    game.computerEvents = []
+    const reinforceGame = service.checkStatus(game)
+    const optinolAttack = service.computerOptiolAttack(reinforceGame)
+    const battleResult = service.computerAttack(reinforceGame ,optinolAttack)
+    const findMoveForComputer = service.computerMove(battleResult)
+    const soldiersAmount = service.findMaxAmountSoldiers( battleResult, findMoveForComputer.from)
+    const from  = findMoveForComputer.from
+    const to = findMoveForComputer.to
+    const gameMove = service.move(battleResult, from, to, soldiersAmount)
+    gameMove.round += 1
+    gameMove.phase = "reinforce"
+    gameMove.computerEvents.push({type: "move",fromId: from , toId: to, soldiers: soldiersAmount})
+    const computerTurn = gameMove.computerEvents
+    delete gameMove.computerEvents
+    console.log("goddddddddddddddddddddddddddd")
+    const gamee = {game: gameMove, playerEvent, computerEvents: computerTurn}
+    return gamee
+  }
+    
+
+  async function endPlayerTurn(gameid) {
+    const game = await getSaveGame(gameid)
+    service.checkAcativti(game, "move")
+    const playerEvent = null
+    const gameAfterComuter = await computerTurn(game, playerEvent) 
+    gameAfterComuter.phase = "reinforce"
+    await mongoRepo.updateGame(collection1 ,{id: Number(gameid)}, gameAfterComuter)
+
+    return gameAfterComuter
+  }
+
+  return { loadMapToDataBase, createNewGame, getSaveGame, reinforcePlayer, attackStage , moveSoldiers, computerTurn, endPlayerTurn};
 }
 
 export const myControler = await controler(collection1, collection2);

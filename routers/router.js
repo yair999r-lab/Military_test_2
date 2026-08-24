@@ -1,6 +1,6 @@
 import express from "express"
 
-import { validPlayerName, validTerritory, validAttackSkip } from "../middleware.js"
+import { validPlayerName, validTerritory, validMove } from "../middleware.js"
 import { myControler } from "../controler.js"
 
 const router = express.Router()
@@ -29,23 +29,53 @@ router.post("/games/:id/reinforce", validTerritory ,async (req, res, next) => {
     try {
         const gameId = req.params.id
         const territory = req.body.territoryId
-        const updateGame = await myControler.reinforcePlayer( gameId ,territory)
+        console.log("azazazazazazazazazazazaz")
+        const updateGame = await myControler.reinforcePlayer(gameId ,territory)
         res.status(200).json({...updateGame})
     } catch (error) {
         next(error)
     }
 })
 
-router.post("/games/:id/attack", validAttackSkip, async (req, res, next) => {
+router.post("/games/:id/attack", async (req, res, next) => {
     try {
-        console.log(11111)
         const gameId = req.params.id
-         const {fromId, toId, soldiers, skip} = req.body
+        const fromId = req.body.fromId
+        const toId = req.body.toId
+        const soldiers = req.body.soldiers
+        const skip = req.body.skip
          const nextMove = await myControler.attackStage(fromId, toId, soldiers, skip, gameId)
+         console.log(nextMove)
          res.status(200).json({...nextMove})
     } catch (error) {
         next(error)
     }
+})
+
+router.post("/games/:id/move",validMove, async (req, res, next) =>{
+    try {
+    const gameId = req.params.id
+    const { fromId, toId, soldiers } = req.body;
+    const gameAfterMoveSoldiers = await myControler.moveSoldiers(gameId ,fromId, toId, soldiers)
+    res.status(200).json({...gameAfterMoveSoldiers})
+    } catch (error) {
+        next(error)
+    }
+    
+} )
+
+router.post("/games/:id/end-turn", async (req, res, next) => {
+    try {
+    const gameId = req.params.id
+    const gameAfterComuter = await myControler.endPlayerTurn(gameId)
+    console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%")
+    console.log(gameAfterComuter)
+    console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%")
+    res.status(200).json({...gameAfterComuter})
+    } catch (error) {
+        next(error)
+    }
+  
 })
 
 
