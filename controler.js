@@ -57,6 +57,7 @@ export async function controler(collection1, collection2) {
 
   async function attackStage(fromId, toId, soldiers, skip, gameId) {
     const game = await getSaveGame(gameId)
+    console.log(game)
     service.checkAcativti(game, "attack")
     if(skip){
         game.phase = "move"
@@ -68,8 +69,8 @@ export async function controler(collection1, collection2) {
     service.checkNeighoders(game ,fromId, toId)
     service.checkSendSoldiersAmount(game, fromId, soldiers)
     const battleResult = service.battle(game, fromId, toId ,soldiers)
-    const winner = battleResult.winner
-    delete battleResult.winner
+    const winner = battleResult.winnerAttack
+    delete battleResult.winnerAttack
 
     await mongoRepo.updateGame(collection1 ,{id: Number(gameId)}, battleResult)
     

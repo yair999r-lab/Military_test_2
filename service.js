@@ -86,8 +86,8 @@ export function myService() {
     const defensePower = defendingSoldiers * defenseLuck;
 
     if (attackPower > defensePower) {
-        game.status = "move"
-        game.winner = fromTerr.owner
+        game.phase = "move"
+        game.winnerAttack = fromTerr.owner
       const survivors = Math.max(
         1,
         Math.ceil((sentSoldiers * (attackPower - defensePower)) / attackPower),
@@ -102,8 +102,8 @@ export function myService() {
       }
 
     } else {
-        game.status = "move"
-        winner = defense.owner
+        game.phase = "move"
+        game.winnerAttack = defense.owner
       const survivors = Math.max(
         1,
         Math.ceil(
@@ -112,7 +112,6 @@ export function myService() {
       );
       defense.soldiers = survivors
     }
-    
     return game
   }
 
